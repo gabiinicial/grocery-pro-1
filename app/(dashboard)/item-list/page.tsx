@@ -1,15 +1,16 @@
 // components/Checklist.tsx
+import { Item } from "@/app/shared/types/item";
 import { Trash2, Plus } from "lucide-react";
 import Link from "next/link";
 
 export default function Checklist() {
-  const items = [
-    "Compra para limpieza",
-    "Compra para limpieza",
-    "Compra para limpieza",
-    "Compra para limpieza",
-    "Compra para limpieza",
-  ];
+  const items: Item[] = [
+  { id: "1", name: "Compra para limpieza" },
+  { id: "2", name: "Compra de alimentos" },
+  { id: "3", name: "Compra para mascotas" },
+  { id: "4", name: "Compra de frutas" },
+  { id: "5", name: "Compra semanal" },
+];
 
   return (
     <div className="p-8 rounded-lg w-full">
@@ -42,7 +43,7 @@ export default function Checklist() {
                 htmlFor={`item-${index}`}
                 className="text-sm font-medium text-gray-700"
               >
-                {item}
+                {item.name}
               </label>
             </div>
 

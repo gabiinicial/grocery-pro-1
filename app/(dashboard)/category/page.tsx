@@ -1,27 +1,29 @@
 // components/Categories.tsx
+import { Category } from "@/app/shared/types/category";
 import { Plus } from "lucide-react";
 
 export default function Categories() {
-  const popularCategories = [
-    "Categoría",
-    "Categoría",
-    "Categoría",
-    "Categoría",
-    "Categoría",
+  const popularCategories: Category[] = [
+    { id: "1", name: "Verduras" },
+    { id: "2", name: "Lácteos" },
+    { id: "3", name: "Carnes" },
+    { id: "4", name: "Panadería" },
+    { id: "5", name: "Bebidas" },
   ];
-  const allCategories = [
-    "Categoría",
-    "Categoría",
-    "Categoría",
-    "Categoría",
-    "Categoría",
-    "Categoría",
-    "Categoría",
-    "Categoría",
-    "Categoría",
-    "Categoría",
-    "Categoría",
-    "Categoría",
+
+  const allCategories: Category[] = [
+    { id: "1", name: "Verduras" },
+    { id: "2", name: "Lácteos" },
+    { id: "3", name: "Carnes" },
+    { id: "4", name: "Panadería" },
+    { id: "5", name: "Bebidas" },
+    { id: "6", name: "Snacks" },
+    { id: "7", name: "Aseo" },
+    { id: "8", name: "Hogar" },
+    { id: "9", name: "Cuidado Personal" },
+    { id: "10", name: "Mascotas" },
+    { id: "11", name: "Congelados" },
+    { id: "12", name: "Otros" },
   ];
 
   return (
@@ -60,7 +62,7 @@ export default function Categories() {
               key={index}
               className="bg-orange-500 text-white px-6 py-4 rounded-lg shadow-md flex items-center"
             >
-              {category}
+              {category.name}
             </div>
           ))}
         </div>
@@ -77,7 +79,7 @@ export default function Categories() {
               key={index}
               className="bg-yellow-100 text-orange-500 border border-yellow-300 px-4 py-2 rounded-lg text-center font-medium shadow-sm hover:bg-yellow-200 transition"
             >
-              {category}
+              {category.name}
             </div>
           ))}
         </div>
