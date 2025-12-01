@@ -1,5 +1,5 @@
 import { Bell, CircleUser } from "lucide-react";
-import logoWeb from "../../public/logo.svg";
+import logoWeb from "/public/logo.svg";
 import Image from "next/image";
 import Link from "next/link";
 export default function Header() {
