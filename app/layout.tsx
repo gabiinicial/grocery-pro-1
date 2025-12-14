@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import "./styles/globals.css";
 import { Baloo_Chettan_2 } from "next/font/google";
 
 const baloo = Baloo_Chettan_2({

@@ -1,3 +1,4 @@
+"use client";
 import { FormValues } from "@/app/shared/types/create";
 import { useForm } from "react-hook-form";
 

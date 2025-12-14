@@ -37,14 +37,11 @@ export default function Home() {
           <div className="flex gap-2">
             {/* Botón Crear Lista */}
             <Link href="/create">
-              <button className="bg-orange-500 text-white border border-white px-4 py-2 rounded-lg font-medium hover:bg-orange-100 transition">
+              <button className="bg-white text-orange-500  px-4 py-2 rounded-lg font-medium hover:bg-orange-100 transition">
                 Crear Lista
               </button>
             </Link>
             {/* Botón Regístrate */}
-            <button className="bg-orange-100 text-orange-500 px-4 py-2 rounded-lg font-medium hover:bg-white transition">
-              Regístrate
-            </button>
           </div>
         </div>
 

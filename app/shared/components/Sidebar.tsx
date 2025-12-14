@@ -18,7 +18,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="bg-orange-900 text-white h-screen w-60 flex flex-col justify-between p-3 rounded-2xl">
+    <aside className="bg-orange-900 text-white h-[89vh] w-60 flex flex-col justify-between p-3 rounded-2xl">
       {/* Menu Items */}
       <nav className="flex flex-col gap-3 w-full">
         {/* Inicio */}

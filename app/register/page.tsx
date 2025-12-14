@@ -3,21 +3,26 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
-interface LoginFormValues {
+interface RegisterFormValues {
+  name: string;
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
-export default function Login() {
+export default function Register() {
   const router = useRouter();
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
-  } = useForm<LoginFormValues>();
+  } = useForm<RegisterFormValues>();
 
-  const onSubmit = (data: LoginFormValues) => {
-    console.log("Datos del login:", data);
+  const password = watch("password");
+
+  const onSubmit = (data: RegisterFormValues) => {
+    console.log("Datos del registro:", data);
     
     // Guardar el estado de autenticación
     localStorage.setItem("auth", "true");
@@ -26,16 +31,46 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen py-7 mx-auto w-full max-w-7xl">
-      {/* Izquierda: Formulario de inicio de sesión */}
+    <div className="flex min-h-screen py-7 w-full max-w-7xl mx-auto">
       <div className="md:w-3/5 w-full flex flex-col justify-center items-center p-8">
         <span className="w-full max-w-md">
           <h1 className="text-3xl font-bold text-orange-700 mb-4">
-            Inicio de sesión
+            Crear Cuenta
           </h1>
-          <p className="text-gray-500 mb-8">Identifícate para continuar</p>
+          <p className="text-gray-500 mb-8">Registrate para comenzar</p>
         </span>
         <form className="w-full max-w-md space-y-4" onSubmit={handleSubmit(onSubmit)}>
+          {/* Nombre */}
+          <div>
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Nombre<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="name"
+              {...register("name", {
+                required: "El nombre es obligatorio",
+                minLength: {
+                  value: 2,
+                  message: "El nombre debe tener al menos 2 caracteres",
+                },
+              })}
+              className={`mt-1 block w-full rounded-lg px-3 py-3 focus:outline-none text-gray-700 focus:ring-1 ${
+                errors.name
+                  ? "border border-red-500 focus:ring-red-500 focus:border-red-500"
+                  : "border border-gray-300 focus:ring-orange-500 focus:border-orange-500"
+              }`}
+              placeholder="Tu Nombre"
+            />
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+            )}
+          </div>
+
+          {/* Email */}
           <div>
             <label
               htmlFor="email"
@@ -53,10 +88,10 @@ export default function Login() {
                   message: "Email inválido",
                 },
               })}
-              className={`mt-1 block w-full rounded-lg px-3 py-3 focus:outline-none ${
+              className={`mt-1 block w-full rounded-lg px-3 py-3 focus:outline-none text-gray-700 focus:ring-1 ${
                 errors.email
-                  ? "border border-red-500 focus:ring-1 focus:ring-red-500 focus:border-red-500"
-                  : "border border-gray-300 focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                  ? "border border-red-500 focus:ring-red-500 focus:border-red-500"
+                  : "border border-gray-300 focus:ring-orange-500 focus:border-orange-500"
               }`}
               placeholder="tuemail@gmail.com"
             />
@@ -65,6 +100,7 @@ export default function Login() {
             )}
           </div>
 
+          {/* Contraseña */}
           <div>
             <label
               htmlFor="password"
@@ -82,10 +118,10 @@ export default function Login() {
                   message: "La contraseña debe tener al menos 6 caracteres",
                 },
               })}
-              className={`mt-1 block w-full rounded-lg px-3 py-3 focus:outline-none text-gray-700 ${
+              className={`mt-1 block w-full rounded-lg px-3 py-3 focus:outline-none text-gray-700 focus:ring-1 ${
                 errors.password
-                  ? "border border-red-500 focus:ring-1 focus:ring-red-500 focus:border-red-500"
-                  : "border border-gray-300 focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                  ? "border border-red-500 focus:ring-red-500 focus:border-red-500"
+                  : "border border-gray-300 focus:ring-orange-500 focus:border-orange-500"
               }`}
               placeholder="********"
             />
@@ -93,18 +129,50 @@ export default function Login() {
               <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
             )}
           </div>
+
+          {/* Confirmar Contraseña */}
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Confirmar Contraseña<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              {...register("confirmPassword", {
+                required: "Debes confirmar tu contraseña",
+                validate: (value) =>
+                  value === password || "Las contraseñas no coinciden",
+              })}
+              className={`mt-1 block w-full rounded-lg px-3 py-3 focus:outline-none text-gray-700 focus:ring-1 ${
+                errors.confirmPassword
+                  ? "border border-red-500 focus:ring-1 focus:ring-red-500 focus:border-red-500"
+                  : "border border-gray-300 focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+              }`}
+              placeholder="********"
+            />
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.confirmPassword.message}
+              </p>
+            )}
+          </div>
+
+          {/* Botón Submit */}
           <div>
             <button
               type="submit"
               className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition"
             >
-              Iniciar Sesión
+              Registrarse
             </button>
           </div>
         </form>
 
         <div className="mt-6 w-full max-w-md">
-          <p className="text-gray-500 text-center">o inicia sesión con</p>
+          <p className="text-gray-500 text-center">o registrate con</p>
           <div className="flex flex-col gap-2 mt-4 w-full">
             <button className="flex items-center gap-2 font-semibold px-4 py-3 border border-amber-950 justify-center text-amber-950 rounded-lg w-full hover:bg-gray-100">
               <svg
@@ -154,23 +222,23 @@ export default function Login() {
         </div>
 
         <p className="mt-8 text-gray-500">
-          si aún no te registras{" "}
+          si ya estas registrado{" "}
           <a
-            href="/register"
+            href="/login"
             className="text-orange-500 hover:underline font-medium"
           >
-            Regístrate
+            Inicia Sesión
           </a>
         </p>
       </div>
 
       {/* Derecha: Sección vacía */}
-      <div className="w-1/2 rounded-2xl hidden relative overflow-hidden bg-orange-500 md:flex items-center">
+      <div className="w-1/2 rounded-2xl hidden relative overflow-hidden bg-orange-500 md:flex justify-center items-center">
         <svg
           width="328"
           height="138"
           viewBox="0 0 328 138"
-          className="absolute left-14 top-14 w-64 h-auto"
+          className="absolute left-14 top-20 w-64 h-auto z-[1]"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -184,35 +252,12 @@ export default function Login() {
           />
         </svg>
         <Image
-          src="/grocery.png"
+          src="/register.png"
+          width={900}
+          height={800}
           alt="Lista de compras"
-          width={330}
-          height={340}
-          className="w-3/5 h-auto absolute -left-5 top-28"
+          className="w-full h-full absolute -bottom-8 object-cover"
         />
-        <Image
-          src="/market.png"
-          alt="Lista de compras"
-          width={330}
-          height={340}
-          className="w-2/5 h-auto absolute -right-5 top-10"
-        />
-        <h3 className="text-white text-4xl w-64 relative top-48 ml-11">
-          Simplifica tus Compras
-        </h3>
-        <svg
-          width="288"
-          height="452"
-          viewBox="0 0 288 452"
-          className="absolute -right-3 top-80 w-3/5 h-auto"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M189.346 365.354C179.046 362.602 142.923 354.346 120.567 352.065C107.595 350.594 94.7082 349.478 81.9512 348.706L62.8587 347.727C56.2423 347.397 50.7391 347.276 45.8511 348.043C41.1253 348.866 37.3821 350.678 35.4976 353.182C34.5554 354.434 33.9914 355.692 33.6111 357.187C33.2199 358.78 33.2067 360.752 33.1396 362.456C33.3511 366.159 34.7815 372.109 38.0041 380.08C41.1943 387.964 45.929 397.082 51.1396 406.088C57.5796 417.621 70.8987 435.333 66.7418 447.841C64.4955 454.275 60.1898 456.219 54.3335 453.273C48.4772 450.326 40.9515 442.424 33.054 429.261C23.6463 413.45 14.036 395.341 6.87409 373.471C3.29836 362.675 0.826903 350.684 0.213315 340.134C-0.400272 329.584 0.682096 320.421 3.40474 313.5C6.11644 306.676 10.0684 302.282 14.2994 299.511C18.5303 296.74 23.062 295.4 27.5283 294.638C32.0379 293.866 36.493 293.575 40.8505 293.401L53.382 292.818C77.6568 291.18 103.073 293.214 129.081 297.455C142.063 299.58 155.196 302.233 168.416 305.242L188.336 310.061L198.323 312.605C201.641 313.424 205.186 314.472 207.661 314.925C210.05 315.399 212.374 315.7 214.364 315.61C215.412 315.647 216.353 315.521 217.208 315.415C217.975 315.329 219.068 314.98 219.252 314.844C220.095 314.459 220.832 313.536 220.618 311.71C220.599 310.027 219.833 308.236 218.755 306.236C215.616 300.498 210.586 293.231 204.629 284.492C181.74 250.914 158.819 217.249 135.811 183.98L119.515 160.586C114.259 153.091 108.193 144.566 102.01 134.848C95.8386 125.035 89.204 113.734 83.1244 99.3966C76.9474 85.1755 72.2339 67.7047 71.3446 52.9046C70.2938 37.6734 73.1634 25.7469 77.3892 18.5688C81.6369 11.198 86.9399 7.14486 92.3927 4.37003C97.8777 1.68144 103.664 0.423406 109.719 0.134212C115.99 -0.205518 121.514 0.848938 127.178 1.40133C166.646 6.90611 210.09 30.4288 252.866 61.3304C257.932 64.9304 263.464 68.1405 269.157 71.7816C274.84 75.1437 280.694 79.216 286.278 83.8206C295.491 91.3293 310.891 105.177 319.831 115.095C323.718 119.439 327.647 124.149 331.535 127.368C349.474 142.593 353.061 152.917 344.82 163.941C343.065 166.415 343.727 172.826 339.437 171.296C339.275 171.24 338.907 171.138 338.745 171.082C325.686 169.256 314.376 153.139 302 142.336C272.019 116.699 241.847 96.078 212.662 81.9801C198.054 74.888 183.692 69.3327 169.663 65.2942C162.703 63.5439 155.785 61.7834 148.996 60.7432C145.581 60.0405 142.24 59.7894 138.911 59.4417C135.538 59.1042 132.176 58.6702 129.429 58.7491C122.423 58.8853 115.934 60.777 111.55 64.5214C109.396 66.4316 107.901 68.8445 107.152 71.3645C106.402 73.8846 106.27 76.1669 106.623 78.9921C106.965 81.9137 107.697 84.7442 109.389 88.7573C110.963 92.7044 113.562 97.6311 116.68 102.812C119.83 108.079 123.575 113.676 127.633 119.482L140.702 137.908C150.405 151.493 160.682 163.724 169.907 178.921L169.767 178.673C180.009 193.07 190.457 207.137 200.45 221.873C210.162 236.113 219.983 250.514 229.835 265.002C232.706 269.397 235.749 274.126 238.942 279.758C240.312 282.158 242.825 286.73 244.734 290.693C246.718 294.731 248.562 298.897 250.189 303.113C256.838 319.85 259.768 337.081 258.205 350.109C256.729 363.117 250.351 371.079 242.357 373.603C236.062 375.637 230.095 375.155 224.193 374.096L219.837 373.144L215.794 372.025C213.427 371.358 210.985 370.616 208.618 369.949C203.852 368.53 199.161 367.188 194.47 365.845C193.249 365.474 191.475 365.888 189.346 365.354Z"
-            fill="#FFFAF8"
-          />
-        </svg>
       </div>
     </div>
   );
