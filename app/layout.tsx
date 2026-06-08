@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${baloo.className} bg-orange-50`}>{children}</body>
+      <body suppressHydrationWarning className={`${baloo.className} bg-orange-50`}>{children}</body>
     </html>
   );
 }

@@ -1,0 +1,72 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Docker Compose — Grocery Pro (uso académico / desarrollo local)
+#
+# Levanta dos servicios:
+#   • postgres  → base de datos PostgreSQL
+#   • backend   → API REST Express + TypeScript
+#
+# El frontend Next.js corre FUERA de Docker con `pnpm dev`.
+#
+# Cómo usarlo:
+#   1. Copia .env.example → .env  y ajusta los valores
+#   2. docker compose up --build
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Base de datos ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine       # imagen oficial, versión liviana
+    container_name: grocery_db
+    restart: unless-stopped         # se reinicia solo si falla
+
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+
+    ports:
+      - "5432:5432"                 # puerto host:contenedor
+                                    # permite conectarte con pgAdmin o DBeaver
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # persiste datos entre reinicios
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend Express ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ../grocery-pro-backend   # ruta a la carpeta del backend
+      dockerfile: ../grocery-pro-1/docker/backend/Dockerfile
+    container_name: grocery_backend
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+
+    ports:
+      - "4000:4000"                 # la API queda disponible en localhost:4000
+
+    depends_on:
+      postgres:
+        condition: service_healthy  # espera a que PostgreSQL esté listo
+
+    volumes:
+      # En desarrollo puedes montar el código fuente para hot-reload
+      # (comenta estas líneas en producción)
+      - ../grocery-pro-backend/src:/app/src
+      - ../grocery-pro-backend/prisma:/app/prisma
+
+# ── Volúmenes nombrados ────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+    # Docker gestiona dónde se guardan los datos en el host

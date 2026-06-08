@@ -4,13 +4,14 @@ import { Home, FileText, List, Bell, LogOut, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { clearAuthSession } from "../lib/auth-storage";
 
 export default function Sidebar() {
   const router = useRouter();
   const [isListOpen, setIsListOpen] = useState(false);
   const handleLogout = () => {
-    localStorage.removeItem("auth"); // Eliminar el estado de autenticación
-    router.push("/login"); // Redirigir a la página de login
+    clearAuthSession();
+    router.replace("/login");
   };
 
   const toggleList = () => {

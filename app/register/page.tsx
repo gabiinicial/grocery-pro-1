@@ -1,63 +1,72 @@
 "use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-
-interface RegisterFormValues {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
+import { register as registerRequest } from "../shared/lib/auth-api";
+import { clearAuthSession, saveAuthSession } from "../shared/lib/auth-storage";
+import { registerSchema, type RegisterFormValues } from "../shared/schemas/auth";
 
 export default function Register() {
   const router = useRouter();
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
     watch,
-    formState: { errors },
-  } = useForm<RegisterFormValues>();
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    mode: "onTouched",
+  });
 
   const password = watch("password");
 
-  const onSubmit = (data: RegisterFormValues) => {
-    console.log("Datos del registro:", data);
-    
-    // Guardar el estado de autenticación
-    localStorage.setItem("auth", "true");
-    // Redirigir a la página de inicio
-    router.push("/");
+  const onSubmit = async (data: RegisterFormValues) => {
+    setSubmitError(null);
+
+    try {
+      clearAuthSession();
+      const session = await registerRequest({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      });
+
+      saveAuthSession(session);
+      router.replace("/");
+      router.refresh();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo crear la cuenta.";
+      setSubmitError(message);
+    }
   };
 
   return (
     <div className="flex min-h-screen py-7 w-full max-w-7xl mx-auto">
-      <div className="md:w-3/5 w-full flex flex-col justify-center items-center p-8">
+      <div className="md:w-3/5 w-full flex flex-col justify-center items-center px-8">
         <span className="w-full max-w-md">
-          <h1 className="text-3xl font-bold text-orange-700 mb-4">
-            Crear Cuenta
-          </h1>
+          <h1 className="text-3xl font-bold text-orange-700 mb-4">Crear Cuenta</h1>
           <p className="text-gray-500 mb-8">Registrate para comenzar</p>
         </span>
-        <form className="w-full max-w-md space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          {/* Nombre */}
+
+        <form className="w-full max-w-md space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
               Nombre<span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               id="name"
-              {...register("name", {
-                required: "El nombre es obligatorio",
-                minLength: {
-                  value: 2,
-                  message: "El nombre debe tener al menos 2 caracteres",
-                },
-              })}
+              {...register("name")}
               className={`mt-1 block w-full rounded-lg px-3 py-3 focus:outline-none text-gray-700 focus:ring-1 ${
                 errors.name
                   ? "border border-red-500 focus:ring-red-500 focus:border-red-500"
@@ -65,29 +74,17 @@ export default function Register() {
               }`}
               placeholder="Tu Nombre"
             />
-            {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-            )}
+            {errors.name ? <p className="text-red-500 text-sm mt-1">{errors.name.message}</p> : null}
           </div>
 
-          {/* Email */}
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email<span className="text-red-500">*</span>
             </label>
             <input
               type="email"
               id="email"
-              {...register("email", {
-                required: "El email es obligatorio",
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Email inválido",
-                },
-              })}
+              {...register("email")}
               className={`mt-1 block w-full rounded-lg px-3 py-3 focus:outline-none text-gray-700 focus:ring-1 ${
                 errors.email
                   ? "border border-red-500 focus:ring-red-500 focus:border-red-500"
@@ -95,29 +92,17 @@ export default function Register() {
               }`}
               placeholder="tuemail@gmail.com"
             />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-            )}
+            {errors.email ? <p className="text-red-500 text-sm mt-1">{errors.email.message}</p> : null}
           </div>
 
-          {/* Contraseña */}
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Contraseña<span className="text-red-500">*</span>
             </label>
             <input
               type="password"
               id="password"
-              {...register("password", {
-                required: "La contraseña es obligatoria",
-                minLength: {
-                  value: 6,
-                  message: "La contraseña debe tener al menos 6 caracteres",
-                },
-              })}
+              {...register("password")}
               className={`mt-1 block w-full rounded-lg px-3 py-3 focus:outline-none text-gray-700 focus:ring-1 ${
                 errors.password
                   ? "border border-red-500 focus:ring-red-500 focus:border-red-500"
@@ -125,48 +110,38 @@ export default function Register() {
               }`}
               placeholder="********"
             />
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
-            )}
+            {errors.password ? <p className="text-red-500 text-sm mt-1">{errors.password.message}</p> : null}
           </div>
 
-          {/* Confirmar Contraseña */}
           <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
               Confirmar Contraseña<span className="text-red-500">*</span>
             </label>
             <input
               type="password"
               id="confirmPassword"
-              {...register("confirmPassword", {
-                required: "Debes confirmar tu contraseña",
-                validate: (value) =>
-                  value === password || "Las contraseñas no coinciden",
-              })}
+              {...register("confirmPassword")}
               className={`mt-1 block w-full rounded-lg px-3 py-3 focus:outline-none text-gray-700 focus:ring-1 ${
                 errors.confirmPassword
-                  ? "border border-red-500 focus:ring-1 focus:ring-red-500 focus:border-red-500"
-                  : "border border-gray-300 focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                  ? "border border-red-500 focus:ring-red-500 focus:border-red-500"
+                  : "border border-gray-300 focus:ring-orange-500 focus:border-orange-500"
               }`}
               placeholder="********"
             />
-            {errors.confirmPassword && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.confirmPassword.message}
-              </p>
-            )}
+            {errors.confirmPassword ? (
+              <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
+            ) : null}
           </div>
 
-          {/* Botón Submit */}
+          {submitError ? <p className="text-sm text-red-600">{submitError}</p> : null}
+
           <div>
             <button
               type="submit"
-              className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition"
+              disabled={isSubmitting}
+              className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              Registrarse
+              {isSubmitting ? "Registrando..." : "Registrarse"}
             </button>
           </div>
         </form>
@@ -175,46 +150,18 @@ export default function Register() {
           <p className="text-gray-500 text-center">o registrate con</p>
           <div className="flex flex-col gap-2 mt-4 w-full">
             <button className="flex items-center gap-2 font-semibold px-4 py-3 border border-amber-950 justify-center text-amber-950 rounded-lg w-full hover:bg-gray-100">
-              <svg
-                width="800px"
-                height="800px"
-                viewBox="0 0 32 32"
-                className="w-5 h-5"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M30.0014 16.3109C30.0014 15.1598 29.9061 14.3198 29.6998 13.4487H16.2871V18.6442H24.1601C24.0014 19.9354 23.1442 21.8798 21.2394 23.1864L21.2127 23.3604L25.4536 26.58L25.7474 26.6087C28.4458 24.1665 30.0014 20.5731 30.0014 16.3109Z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M16.2863 29.9998C20.1434 29.9998 23.3814 28.7553 25.7466 26.6086L21.2386 23.1863C20.0323 24.0108 18.4132 24.5863 16.2863 24.5863C12.5086 24.5863 9.30225 22.1441 8.15929 18.7686L7.99176 18.7825L3.58208 22.127L3.52441 22.2841C5.87359 26.8574 10.699 29.9998 16.2863 29.9998Z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M8.15964 18.769C7.85806 17.8979 7.68352 16.9645 7.68352 16.0001C7.68352 15.0356 7.85806 14.1023 8.14377 13.2312L8.13578 13.0456L3.67083 9.64746L3.52475 9.71556C2.55654 11.6134 2.00098 13.7445 2.00098 16.0001C2.00098 18.2556 2.55654 20.3867 3.52475 22.2845L8.15964 18.769Z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M16.2864 7.4133C18.9689 7.4133 20.7784 8.54885 21.8102 9.4978L25.8419 5.64C23.3658 3.38445 20.1435 2 16.2864 2C10.699 2 5.8736 5.1422 3.52441 9.71549L8.14345 13.2311C9.30229 9.85555 12.5086 7.4133 16.2864 7.4133Z"
-                  fill="#EB4335"
-                />
+              <svg width="800px" height="800px" viewBox="0 0 32 32" className="w-5 h-5" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M30.0014 16.3109C30.0014 15.1598 29.9061 14.3198 29.6998 13.4487H16.2871V18.6442H24.1601C24.0014 19.9354 23.1442 21.8798 21.2394 23.1864L21.2127 23.3604L25.4536 26.58L25.7474 26.6087C28.4458 24.1665 30.0014 20.5731 30.0014 16.3109Z" fill="#4285F4" />
+                <path d="M16.2863 29.9998C20.1434 29.9998 23.3814 28.7553 25.7466 26.6086L21.2386 23.1863C20.0323 24.0108 18.4132 24.5863 16.2863 24.5863C12.5086 24.5863 9.30225 22.1441 8.15929 18.7686L7.99176 18.7825L3.58208 22.127L3.52441 22.2841C5.87359 26.8574 10.699 29.9998 16.2863 29.9998Z" fill="#34A853" />
+                <path d="M8.15964 18.769C7.85806 17.8979 7.68352 16.9645 7.68352 16.0001C7.68352 15.0356 7.85806 14.1023 8.14377 13.2312L8.13578 13.0456L3.67083 9.64746L3.52475 9.71556C2.55654 11.6134 2.00098 13.7445 2.00098 16.0001C2.00098 18.2556 2.55654 20.3867 3.52475 22.2845L8.15964 18.769Z" fill="#FBBC05" />
+                <path d="M16.2864 7.4133C18.9689 7.4133 20.7784 8.54885 21.8102 9.4978L25.8419 5.64C23.3658 3.38445 20.1435 2 16.2864 2C10.699 2 5.8736 5.1422 3.52441 9.71549L8.14345 13.2311C9.30229 9.85555 12.5086 7.4133 16.2864 7.4133Z" fill="#EB4335" />
               </svg>
               Google
             </button>
             <button className="flex items-center gap-2 font-semibold px-4 py-3 border border-amber-950 justify-center text-amber-950 rounded-lg w-full hover:bg-gray-100">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                aria-label="Facebook"
-                role="img"
-                className="w-5 h-5"
-                viewBox="0 0 512 512"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" aria-label="Facebook" role="img" className="w-5 h-5" viewBox="0 0 512 512">
                 <rect width="512" height="512" rx="15%" fill="#1877f2" />
-                <path
-                  d="M355.6 330l11.4-74h-71v-48c0-20.2 9.9-40 41.7-40H370v-63s-29.3-5-57.3-5c-58.5 0-96.7 35.4-96.7 99.6V256h-65v74h65v182h80V330h59.6z"
-                  fill="#ffffff"
-                />
+                <path d="M355.6 330l11.4-74h-71v-48c0-20.2 9.9-40 41.7-40H370v-63s-29.3-5-57.3-5c-58.5 0-96.7 35.4-96.7 99.6V256h-65v74h65v182h80V330h59.6z" fill="#ffffff" />
               </svg>
               Facebook
             </button>
@@ -223,41 +170,40 @@ export default function Register() {
 
         <p className="mt-8 text-gray-500">
           si ya estas registrado{" "}
-          <a
-            href="/login"
-            className="text-orange-500 hover:underline font-medium"
-          >
+          <a href="/login" className="text-orange-500 hover:underline font-medium">
             Inicia Sesión
           </a>
         </p>
       </div>
 
-      {/* Derecha: Sección vacía */}
-      <div className="w-1/2 rounded-2xl hidden relative overflow-hidden bg-orange-500 md:flex justify-center items-center">
-        <svg
-          width="328"
-          height="138"
-          viewBox="0 0 328 138"
-          className="absolute left-14 top-20 w-64 h-auto z-[1]"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M71.5862 133.241C76.7293 133.221 81.8559 132.927 86.9661 132.522C96.632 131.708 106.221 130.137 115.519 127.684C120.185 126.499 124.708 125.073 128.989 123.28C133.243 121.473 137.266 119.295 140.593 116.543C140.927 116.259 141.257 115.97 141.559 115.661L142.42 114.712L142.354 114.756C144.182 112.987 145.73 111.021 146.877 108.905C148.03 106.8 148.804 104.52 149.199 102.169C149.935 97.456 149.144 92.5215 147.185 87.9918C146.032 85.3752 144.484 82.8887 142.591 80.6431C140.702 78.4072 138.419 76.3496 135.932 74.5473C130.932 70.9284 124.988 68.2781 118.714 66.4903C112.424 64.688 105.809 63.8014 99.0965 63.5363C92.3836 63.2665 85.5938 63.6086 78.7986 64.2206C74.5502 64.5772 67.3378 65.6132 67.1731 63.9797C67.0908 63.1316 68.216 62.2834 70.3128 61.5365C72.4095 60.7896 75.4778 60.1487 79.2706 59.7825C88.4426 58.9103 97.8505 58.6115 107.154 59.7054C111.814 60.221 116.414 61.1607 120.887 62.4232C123.11 63.093 125.328 63.7966 127.469 64.6688C128.555 65.0687 129.598 65.5602 130.658 66.0132C131.179 66.2541 131.695 66.5095 132.211 66.7601C132.727 67.0059 133.248 67.2565 133.748 67.536C139.681 70.6489 145.011 74.8509 148.798 80.1227C152.558 85.3559 154.77 91.4517 154.984 97.6969C155.089 100.815 154.672 103.976 153.651 107.002C152.641 110.033 150.994 112.92 148.897 115.454C146.8 118.003 144.265 120.23 141.498 122.123C138.732 124.027 135.757 125.627 132.694 127.01C127.189 129.501 121.376 131.274 115.574 132.739C109.75 134.214 103.828 135.375 97.8505 136.228C85.8902 137.934 73.7159 138.401 61.6293 137.659C55.9538 137.308 50.2948 136.71 44.6851 135.828C39.0261 134.932 33.4219 133.621 28.0098 131.732C25.3038 130.797 22.6472 129.699 20.0784 128.426C17.5096 127.164 15.0341 125.699 12.7178 124.022C10.396 122.355 8.27178 120.427 6.41654 118.283C4.56678 116.139 3.05733 113.734 1.94858 111.194C0.054909 106.819 -0.488491 101.894 0.45011 97.3114C1.32833 92.6998 3.49645 88.4062 6.3836 84.6427C9.3037 80.8889 12.9593 77.6217 17.1528 75.0148C19.2496 73.7089 21.4726 72.5668 23.8108 71.6079C24.3982 71.3717 24.991 71.1501 25.5838 70.9284L27.3731 70.3453C28.5532 69.9261 29.7828 69.6466 30.9958 69.3141C31.5612 69.1503 32.154 69.0394 32.7413 68.919C33.3286 68.7985 33.9214 68.6732 34.5087 68.5527C35.6998 68.3503 36.8964 68.1528 38.0875 67.9504C39.284 67.8058 40.4641 67.589 41.6333 67.4396C42.2151 67.3625 42.7969 67.2806 43.3678 67.1842C43.6532 67.136 43.9386 67.0878 44.224 67.0396C44.5095 66.9962 44.7894 66.9577 45.0693 66.9143C45.763 66.8327 46.3812 67.0203 47.0947 67.0444C47.8028 67.0733 48.5219 67.1167 49.2464 67.1215C50.7009 67.1215 52.1665 67.1794 53.643 67.2035C56.5686 67.3432 59.4996 67.6082 61.9477 68.6105H61.9532C62.3978 68.6973 62.8479 68.784 63.298 68.8708L64.6318 69.1743C65.5155 69.3767 66.4047 69.5502 67.2664 69.7285C71.2514 70.4658 73.6555 71.2754 74.6819 71.9259C75.7083 72.5813 75.3296 73.121 73.7323 73.651C73.0352 73.8872 73.4798 74.5762 71.5807 74.3305C68.8307 74.2727 65.8942 73.704 62.9522 73.174C60.0156 72.6487 57.0132 72.0271 54.1041 71.8054C46.9904 71.2079 39.789 71.5067 33.0047 73.1547L30.4908 73.8438C29.6565 74.0799 28.8551 74.3883 28.0318 74.6582C26.4071 75.2171 24.8702 75.8966 23.3717 76.658C20.3803 78.1952 17.6413 80.1131 15.2207 82.3008C12.8001 84.4885 10.7363 86.9751 9.11707 89.6399C7.49785 92.3095 6.35616 95.1863 5.8402 98.1258C5.32425 101.065 5.43951 104.063 6.25736 106.91C7.10265 109.778 8.53525 112.505 10.5387 114.919C12.9703 117.902 16.1538 120.442 19.7052 122.552C23.262 124.668 27.181 126.379 31.2593 127.757C35.3375 129.135 39.5804 130.19 43.8892 130.956L45.5084 131.231L47.1496 131.472C48.2474 131.626 49.3397 131.8 50.4375 131.935C52.6385 132.19 54.8396 132.46 57.0461 132.619C61.8873 133.014 66.745 133.057 71.663 133.216L71.5862 133.241Z"
-            fill="#FFE8AD"
-          />
-          <path
-            d="M48.58 59.7C41.0667 59.7 34.9767 57.3667 30.31 52.7C25.69 47.9867 23.38 41.57 23.38 33.45C23.38 25.2367 25.69 18.82 30.31 14.2C34.93 9.53333 41.3233 7.2 49.49 7.2C52.85 7.2 55.9067 7.43333 58.66 7.9C59.78 8.08667 60.7133 8.64667 61.46 9.58C62.2067 10.4667 62.58 11.4933 62.58 12.66V12.94C62.58 13.92 62.1833 14.7133 61.39 15.32C60.5967 15.9267 59.71 16.1133 58.73 15.88C55.9767 15.2733 53.2467 14.97 50.54 14.97C44.8933 14.97 40.6 16.5333 37.66 19.66C34.7667 22.74 33.32 27.3367 33.32 33.45C33.32 39.3767 34.7433 43.95 37.59 47.17C40.4833 50.3433 44.38 51.93 49.28 51.93C51.2867 51.93 53.27 51.65 55.23 51.09C55.6033 50.9967 55.79 50.74 55.79 50.32V36.46C55.79 36.04 55.6033 35.83 55.23 35.83H46.48C45.4533 35.83 44.5667 35.48 43.82 34.78C43.12 34.0333 42.77 33.1467 42.77 32.12C42.77 31.0467 43.12 30.16 43.82 29.46C44.5667 28.7133 45.4533 28.34 46.48 28.34H61.18C62.2533 28.34 63.1867 28.7367 63.98 29.53C64.7733 30.3233 65.17 31.2567 65.17 32.33V52.7C65.17 53.9133 64.82 55.01 64.12 55.99C63.42 56.97 62.51 57.6233 61.39 57.95C57.4233 59.1167 53.1533 59.7 48.58 59.7ZM79.1755 59C78.1021 59 77.1688 58.6033 76.3755 57.81C75.5821 57.0167 75.1855 56.0833 75.1855 55.01V26.59C75.1855 25.5167 75.5821 24.5833 76.3755 23.79C77.1688 22.9967 78.1021 22.6 79.1755 22.6H80.5755C81.6488 22.6 82.5821 22.9967 83.3755 23.79C84.1688 24.5833 84.5655 25.5167 84.5655 26.59V29.53C84.5655 29.5767 84.5888 29.6 84.6355 29.6C84.7288 29.6 84.7755 29.5767 84.7755 29.53C86.1288 27.6633 87.9021 26.1467 90.0955 24.98C92.2888 23.7667 94.6921 23.02 97.3055 22.74C98.2855 22.6467 99.1255 22.9733 99.8255 23.72C100.525 24.42 100.875 25.26 100.875 26.24C100.875 27.22 100.525 28.06 99.8255 28.76C99.1255 29.46 98.2855 29.8567 97.3055 29.95C89.0455 30.6033 84.9155 34.8033 84.9155 42.55V55.01C84.9155 56.0833 84.5188 57.0167 83.7255 57.81C82.9321 58.6033 81.9988 59 80.9255 59H79.1755ZM129.213 31.63C127.86 29.67 125.806 28.69 123.053 28.69C120.3 28.69 118.223 29.67 116.823 31.63C115.47 33.5433 114.793 36.6 114.793 40.8C114.793 45 115.47 48.08 116.823 50.04C118.223 51.9533 120.3 52.91 123.053 52.91C125.806 52.91 127.86 51.9533 129.213 50.04C130.613 48.08 131.313 45 131.313 40.8C131.313 36.6 130.613 33.5433 129.213 31.63ZM136.073 54.8C132.993 58.0667 128.653 59.7 123.053 59.7C117.453 59.7 113.09 58.0667 109.963 54.8C106.883 51.4867 105.343 46.82 105.343 40.8C105.343 34.78 106.883 30.1367 109.963 26.87C113.09 23.5567 117.453 21.9 123.053 21.9C128.653 21.9 132.993 23.5567 136.073 26.87C139.2 30.1367 140.763 34.78 140.763 40.8C140.763 46.82 139.2 51.4867 136.073 54.8ZM164.282 59.7C158.495 59.7 154.038 58.1133 150.912 54.94C147.785 51.72 146.222 47.0067 146.222 40.8C146.222 34.6867 147.715 30.02 150.702 26.8C153.735 23.5333 158.028 21.9 163.582 21.9C166.055 21.9 168.435 22.0633 170.722 22.39C171.795 22.53 172.682 23.02 173.382 23.86C174.082 24.7 174.432 25.68 174.432 26.8C174.432 27.7333 174.058 28.48 173.312 29.04C172.612 29.6 171.795 29.7867 170.862 29.6C169.042 29.2267 167.012 29.04 164.772 29.04C161.832 29.04 159.638 29.9733 158.192 31.84C156.745 33.7067 156.022 36.6933 156.022 40.8C156.022 45 156.792 48.01 158.332 49.83C159.872 51.65 162.252 52.56 165.472 52.56C167.758 52.56 169.742 52.35 171.422 51.93C172.308 51.6967 173.102 51.86 173.802 52.42C174.548 52.98 174.922 53.7033 174.922 54.59C174.922 55.71 174.572 56.69 173.872 57.53C173.218 58.37 172.355 58.8833 171.282 59.07C168.902 59.49 166.568 59.7 164.282 59.7ZM199.059 28.41C196.679 28.41 194.835 29.0867 193.529 30.44C192.269 31.7467 191.475 33.87 191.149 36.81C191.149 37.1833 191.335 37.37 191.709 37.37H205.429C205.802 37.37 205.989 37.1833 205.989 36.81C205.802 31.21 203.492 28.41 199.059 28.41ZM200.809 59.7C194.695 59.7 189.982 58.1133 186.669 54.94C183.402 51.72 181.769 47.0067 181.769 40.8C181.769 34.64 183.239 29.95 186.179 26.73C189.119 23.51 193.365 21.9 198.919 21.9C209.279 21.9 214.599 27.78 214.879 39.54C214.925 40.66 214.529 41.5933 213.689 42.34C212.849 43.0867 211.869 43.46 210.749 43.46H191.639C191.219 43.46 191.055 43.67 191.149 44.09C191.475 47.2167 192.502 49.5033 194.229 50.95C196.002 52.35 198.569 53.05 201.929 53.05C204.029 53.05 206.362 52.7 208.929 52C209.769 51.7667 210.539 51.9067 211.239 52.42C211.985 52.9333 212.359 53.6333 212.359 54.52C212.359 55.5933 212.032 56.55 211.379 57.39C210.772 58.1833 209.955 58.6733 208.929 58.86C206.315 59.42 203.609 59.7 200.809 59.7ZM226.422 59C225.348 59 224.415 58.6033 223.622 57.81C222.828 57.0167 222.432 56.0833 222.432 55.01V26.59C222.432 25.5167 222.828 24.5833 223.622 23.79C224.415 22.9967 225.348 22.6 226.422 22.6H227.822C228.895 22.6 229.828 22.9967 230.622 23.79C231.415 24.5833 231.812 25.5167 231.812 26.59V29.53C231.812 29.5767 231.835 29.6 231.882 29.6C231.975 29.6 232.022 29.5767 232.022 29.53C233.375 27.6633 235.148 26.1467 237.342 24.98C239.535 23.7667 241.938 23.02 244.552 22.74C245.532 22.6467 246.372 22.9733 247.072 23.72C247.772 24.42 248.122 25.26 248.122 26.24C248.122 27.22 247.772 28.06 247.072 28.76C246.372 29.46 245.532 29.8567 244.552 29.95C236.292 30.6033 232.162 34.8033 232.162 42.55V55.01C232.162 56.0833 231.765 57.0167 230.972 57.81C230.178 58.6033 229.245 59 228.172 59H226.422ZM265.786 58.44L254.166 26.31C253.886 25.3767 254.003 24.5367 254.516 23.79C255.03 22.9967 255.776 22.6 256.756 22.6H258.856C260.023 22.6 261.096 22.9733 262.076 23.72C263.056 24.42 263.686 25.33 263.966 26.45L270.476 49.34C270.476 49.3867 270.5 49.41 270.546 49.41C270.593 49.41 270.616 49.3867 270.616 49.34L278.106 26.38C278.48 25.26 279.156 24.35 280.136 23.65C281.116 22.95 282.19 22.6 283.356 22.6H285.036C286.016 22.6 286.763 22.9967 287.276 23.79C287.836 24.5833 287.93 25.4233 287.556 26.31L270.476 70.69C270.056 71.81 269.356 72.6967 268.376 73.35C267.396 74.05 266.3 74.4 265.086 74.4H263.406C262.473 74.4 261.726 74.0033 261.166 73.21C260.653 72.4633 260.583 71.6467 260.956 70.76L265.786 59.56C265.88 59.3733 265.926 59.1867 265.926 59C265.926 58.8133 265.88 58.6267 265.786 58.44ZM36.19 80.88V97.75C36.19 98.0767 36.3767 98.2867 36.75 98.38C38.5233 98.6133 40.25 98.73 41.93 98.73C45.71 98.73 48.58 97.9133 50.54 96.28C52.5467 94.6 53.55 92.22 53.55 89.14C53.55 82.9333 49.6767 79.83 41.93 79.83C40.25 79.83 38.5233 79.9467 36.75 80.18C36.3767 80.2733 36.19 80.5067 36.19 80.88ZM30.45 124C29.3767 124 28.4433 123.603 27.65 122.81C26.9033 122.017 26.53 121.083 26.53 120.01V77.24C26.53 76.12 26.9033 75.1167 27.65 74.23C28.3967 73.3433 29.33 72.8533 30.45 72.76C34.4167 72.3867 38.2433 72.2 41.93 72.2C48.93 72.2 54.18 73.6 57.68 76.4C61.18 79.1533 62.93 83.1667 62.93 88.44C62.93 94.2733 61.2267 98.6833 57.82 101.67C54.46 104.657 49.4667 106.15 42.84 106.15C41.3 106.15 39.27 106.057 36.75 105.87C36.3767 105.87 36.19 106.057 36.19 106.43V120.01C36.19 121.083 35.7933 122.017 35 122.81C34.2067 123.603 33.2733 124 32.2 124H30.45ZM73.0915 124C72.0182 124 71.0848 123.603 70.2915 122.81C69.4982 122.017 69.1015 121.083 69.1015 120.01V91.59C69.1015 90.5167 69.4982 89.5833 70.2915 88.79C71.0848 87.9967 72.0182 87.6 73.0915 87.6H74.4915C75.5648 87.6 76.4982 87.9967 77.2915 88.79C78.0848 89.5833 78.4815 90.5167 78.4815 91.59V94.53C78.4815 94.5767 78.5048 94.6 78.5515 94.6C78.6448 94.6 78.6915 94.5767 78.6915 94.53C80.0448 92.6633 81.8182 91.1467 84.0115 89.98C86.2048 88.7667 88.6082 88.02 91.2215 87.74C92.2015 87.6467 93.0415 87.9733 93.7415 88.72C94.4415 89.42 94.7915 90.26 94.7915 91.24C94.7915 92.22 94.4415 93.06 93.7415 93.76C93.0415 94.46 92.2015 94.8567 91.2215 94.95C82.9615 95.6033 78.8315 99.8033 78.8315 107.55V120.01C78.8315 121.083 78.4348 122.017 77.6415 122.81C76.8482 123.603 75.9148 124 74.8415 124H73.0915ZM123.129 96.63C121.776 94.67 119.722 93.69 116.969 93.69C114.216 93.69 112.139 94.67 110.739 96.63C109.386 98.5433 108.709 101.6 108.709 105.8C108.709 110 109.386 113.08 110.739 115.04C112.139 116.953 114.216 117.91 116.969 117.91C119.722 117.91 121.776 116.953 123.129 115.04C124.529 113.08 125.229 110 125.229 105.8C125.229 101.6 124.529 98.5433 123.129 96.63ZM129.989 119.8C126.909 123.067 122.569 124.7 116.969 124.7C111.369 124.7 107.006 123.067 103.879 119.8C100.799 116.487 99.2589 111.82 99.2589 105.8C99.2589 99.78 100.799 95.1367 103.879 91.87C107.006 88.5567 111.369 86.9 116.969 86.9C122.569 86.9 126.909 88.5567 129.989 91.87C133.116 95.1367 134.679 99.78 134.679 105.8C134.679 111.82 133.116 116.487 129.989 119.8Z"
-            fill="white"
-          />
-        </svg>
+      {/* Panel decorativo derecho */}
+      <div className="w-1/2 rounded-2xl hidden relative overflow-hidden bg-orange-500 md:flex flex-col justify-end pb-10">
+
+        {/* Imagen de fondo — cubre todo el panel */}
         <Image
           src="/register.png"
-          width={900}
-          height={800}
-          alt="Lista de compras"
-          className="w-full h-full absolute -bottom-8 object-cover"
+          fill
+          className="object-cover object-center"
+          alt="Tienda de vegetales"
+          sizes="50vw"
+          priority
         />
+
+        {/* Overlay naranja semitransparente encima de la imagen */}
+        <div className="absolute inset-0 bg-orange-500/60" />
+
+        {/* Logo — arriba a la izquierda */}
+        <div className="absolute top-1/4 left-8 z-10">
+          <p className="text-white text-[60px] font-extrabold leading-none tracking-tight">Grocery</p>
+          <span className="inline-block border-2 border-white rounded-full px-3 py-0.5 text-white text-[60px] font-extrabold leading-none mt-1">
+            Pro
+          </span>
+        </div>
+
+        {/* Texto pie — abajo a la izquierda */}
+        <h3 className="relative z-10 ml-10 text-white text-4xl font-bold leading-tight drop-shadow-md">
+          Únete y organiza<br />tus compras
+        </h3>
       </div>
     </div>
   );
