@@ -67,11 +67,6 @@ export default function ListDetailPage() {
       .finally(() => setLoading(false));
   }, [listId, resetBudget]);
 
-  const refreshItems = async () => {
-    const data = await getItems(listId);
-    setItems(data);
-  };
-
   const handleToggleItem = async (item: Item) => {
     const updated = await updateItem(item.id, {
       isChecked: !item.isChecked,

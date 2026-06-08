@@ -15,7 +15,6 @@ export default function Register() {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -28,7 +27,6 @@ export default function Register() {
     mode: "onTouched",
   });
 
-  const password = watch("password");
 
   const onSubmit = async (data: RegisterFormValues) => {
     setSubmitError(null);
