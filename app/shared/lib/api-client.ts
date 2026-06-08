@@ -1,6 +1,8 @@
 import { getAuthToken } from "./auth-storage";
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+// Rutas relativas → Next.js rewrite proxy → backend (sin CORS).
+// En local: rewrite apunta a localhost:4000. En prod: apunta al backend de Railway.
+export const API_BASE_URL = "";
 
 export class ApiError extends Error {
   status: number;
